@@ -815,3 +815,46 @@ public final class UbiquitousHappiness {
                     j++;
                 }
             }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // RATE LIMIT / THROTTLE (mainnet-safe abuse prevention)
+    // -------------------------------------------------------------------------
+
+    private final Map<String, Long> lastPlantByOwner = new ConcurrentHashMap<>();
+    public static final long MIN_PLANT_INTERVAL_MS = 1_000;
+
+    public boolean canPlantNow(String ownerHex) {
+        Long last = lastPlantByOwner.get(ownerHex);
+        if (last == null) return true;
+        return System.currentTimeMillis() - last >= MIN_PLANT_INTERVAL_MS;
+    }
+
+    public void recordPlant(String ownerHex) {
+        lastPlantByOwner.put(ownerHex, System.currentTimeMillis());
+    }
+
+    public MoodSeed plantMoodSeedWithThrottle(String ownerHex, int tierIndex, long principalWei) {
+        if (!canPlantNow(ownerHex)) throw new IllegalStateException("UHQ_PlantThrottled");
+        MoodSeed seed = plantMoodSeed(ownerHex, tierIndex, principalWei);
+        recordPlant(ownerHex);
+        return seed;
+    }
+
+    // -------------------------------------------------------------------------
+    // EPOCH HISTORY (bounded ring for audits)
+    // -------------------------------------------------------------------------
+
+    public static final class EpochRecord {
+        public final long epoch;
+        public final long totalPrincipalAtEpoch;
+        public final long totalCheerAtEpoch;
+        public final long timestampMs;
+
+        public EpochRecord(long epoch, long totalPrincipalAtEpoch, long totalCheerAtEpoch, long timestampMs) {
+            this.epoch = epoch;
+            this.totalPrincipalAtEpoch = totalPrincipalAtEpoch;
+            this.totalCheerAtEpoch = totalCheerAtEpoch;
+            this.timestampMs = timestampMs;
+        }
