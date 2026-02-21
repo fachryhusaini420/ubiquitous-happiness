@@ -428,3 +428,46 @@ public final class UbiquitousHappiness {
         public int size() { return entries.size(); }
     }
 
+    // -------------------------------------------------------------------------
+    // PUBLIC API (EVM-style entrypoints)
+    // -------------------------------------------------------------------------
+
+    public MoodSeed plantMoodSeed(String ownerHex, int tierIndex, long principalWei) {
+        if (ledger.isGardenPaused()) throw new IllegalStateException(UHQ_ERR_GARDEN_PAUSED);
+        MoodSeed seed = ledger.plantSeed(ownerHex, tierIndex, principalWei);
+        eventLog.emit(EVT_MOOD_SEED_PLANTED, String.format("owner=%s,seedId=%s,tier=%d,principal=%d,unlockEpoch=%d",
+                ownerHex, seed.getSeedId(), tierIndex, principalWei, seed.getUnlockEpoch()));
+        return seed;
+    }
+
+    public void addToSeed(String callerHex, String seedId, long amountWei) {
+        if (ledger.isGardenPaused()) throw new IllegalStateException(UHQ_ERR_GARDEN_PAUSED);
+        MoodSeed seed = ledger.getSeed(seedId);
+        if (seed == null) throw new IllegalStateException(UHQ_ERR_SEED_NOT_FOUND);
+        if (!seed.getOwnerHex().equalsIgnoreCase(callerHex)) throw new IllegalStateException(UHQ_ERR_NOT_SEED_OWNER);
+        ledger.addPrincipalToSeed(seedId, amountWei);
+        eventLog.emit(EVT_JOY_PULSE_RECORDED, String.format("owner=%s,seedId=%s,added=%d", callerHex, seedId, amountWei));
+    }
+
+    public void withdrawMoodSeed(String callerHex, String seedId) {
+        if (ledger.isGardenPaused()) throw new IllegalStateException(UHQ_ERR_GARDEN_PAUSED);
+        MoodSeed seed = ledger.getSeed(seedId);
+        long p = seed != null ? seed.getPrincipalWei() : 0;
+        long c = seed != null ? seed.getAccruedCheerWei() : 0;
+        ledger.withdrawSeed(seedId, callerHex);
+        eventLog.emit(EVT_SEED_WITHDRAWN, String.format("owner=%s,seedId=%s,principal=%d,cheer=%d", callerHex, seedId, p, c));
+    }
+
+    public long harvestAndDistribute(String curatorHex, long totalYieldWei) {
+        long treasuryShare = harvest.distributeHarvest(totalYieldWei, curatorHex);
+        eventLog.emit(EVT_CHEER_ORB_DISTRIBUTED, String.format("totalYield=%d,treasuryShare=%d", totalYieldWei, treasuryShare));
+        return treasuryShare;
+    }
+
+    public void setProtocolFeeBasis(String curatorHex, long basis) {
+        if (!access.isJoyCurator(curatorHex)) throw new IllegalStateException(UHQ_ERR_NOT_JOY_CURATOR);
+        if (basis > CHEER_MAX_FEE_BASIS) throw new IllegalStateException(UHQ_ERR_FEE_BASIS_TOO_HIGH);
+        long prev = ledger.getProtocolFeeBasis();
+        ledger.setProtocolFeeBasis(basis);
+        eventLog.emit(EVT_PROTOCOL_FEE_BASIS_SET, String.format("previous=%d,new=%d", prev, basis));
+    }
