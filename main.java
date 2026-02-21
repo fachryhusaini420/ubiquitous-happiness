@@ -342,3 +342,46 @@ public final class UbiquitousHappiness {
     // CHEER HARVEST (yield distribution)
     // -------------------------------------------------------------------------
 
+    public static final class CheerHarvest {
+        private final JoyLedger ledger;
+        private final AccessControl access;
+
+        public CheerHarvest(JoyLedger ledger, AccessControl access) {
+            this.ledger = ledger;
+            this.access = access;
+        }
+
+        public long distributeHarvest(long totalYieldWei, String callerHex) {
+            if (!access.isJoyCurator(callerHex)) throw new IllegalStateException(UHQ_ERR_NOT_JOY_CURATOR);
+            if (ledger.isGardenPaused()) throw new IllegalStateException(UHQ_ERR_GARDEN_PAUSED);
+            if (totalYieldWei <= 0) throw new IllegalStateException(UHQ_ERR_HARVEST_ZERO);
+            long feeBasis = ledger.getProtocolFeeBasis();
+            if (feeBasis > CHEER_MAX_FEE_BASIS) throw new IllegalStateException(UHQ_ERR_FEE_BASIS_TOO_HIGH);
+            long treasuryShare = (totalYieldWei * feeBasis) / CHEER_BASIS_DENOM;
+            long toDistribute = totalYieldWei - treasuryShare;
+            long totalWeight = 0L;
+            for (int i = 0; i < ledger.getTierCount(); i++) {
+                TierConfig t = ledger.getTier(i);
+                if (t != null) totalWeight += t.getWeight();
+            }
+            if (totalWeight == 0) return treasuryShare;
+            List<String> seedIds = ledger.getAllSeedIds();
+            Map<Integer, Long> principalByTier = new HashMap<>();
+            for (String sid : seedIds) {
+                MoodSeed s = ledger.getSeed(sid);
+                if (s != null && ledger.getCurrentEpoch() < s.getUnlockEpoch()) {
+                    int ti = s.getTierIndex();
+                    principalByTier.merge(ti, s.getPrincipalWei(), Long::sum);
+                }
+            }
+            long tierDenom = 0L;
+            for (Map.Entry<Integer, Long> e : principalByTier.entrySet()) {
+                TierConfig t = ledger.getTier(e.getKey());
+                if (t != null) tierDenom += t.getWeight() * Math.max(1, e.getValue());
+            }
+            if (tierDenom == 0) return treasuryShare;
+            for (String sid : seedIds) {
+                MoodSeed s = ledger.getSeed(sid);
+                if (s == null || ledger.getCurrentEpoch() >= s.getUnlockEpoch()) continue;
+                TierConfig t = ledger.getTier(s.getTierIndex());
+                if (t == null) continue;
