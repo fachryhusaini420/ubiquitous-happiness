@@ -772,3 +772,46 @@ public final class UbiquitousHappiness {
     }
 
     // -------------------------------------------------------------------------
+    // SNAPSHOT RESTORE (from JSON string)
+    // -------------------------------------------------------------------------
+
+    public static UbiquitousHappiness restoreFromSnapshot(String json, String joyCuratorAddr, String vaultAddr, String oracleAddr, String treasuryAddr, String relayAddr) {
+        UbiquitousHappiness engine = new UbiquitousHappiness(joyCuratorAddr, vaultAddr, oracleAddr, treasuryAddr, relayAddr);
+        UbiquitousHappiness.SnapshotLoader.load(json, engine.ledger);
+        return engine;
+    }
+
+    public static final class SnapshotLoader {
+        public static void load(String json, JoyLedger ledger) {
+            int i = json.indexOf("\"currentEpoch\":");
+            if (i >= 0) {
+                int end = json.indexOf(",", i);
+                if (end < 0) end = json.indexOf("}", i);
+                String sub = json.substring(i + 15, end).trim();
+                try {
+                    long epoch = Long.parseLong(sub);
+                    for (long e = ledger.getCurrentEpoch(); e < epoch; e++) ledger.advanceEpoch();
+                } catch (NumberFormatException ignored) {}
+            }
+            int feeIdx = json.indexOf("\"protocolFeeBasis\":");
+            if (feeIdx >= 0) {
+                int end = json.indexOf(",", feeIdx);
+                if (end < 0) end = json.indexOf("}", feeIdx);
+                try {
+                    long basis = Long.parseLong(json.substring(feeIdx + 18, end).trim());
+                    ledger.setProtocolFeeBasis(basis);
+                } catch (NumberFormatException ignored) {}
+            }
+            int pauseIdx = json.indexOf("\"gardenPaused\":true");
+            if (pauseIdx >= 0) ledger.setGardenPaused(true);
+            int seedsStart = json.indexOf("\"seeds\":[");
+            if (seedsStart >= 0) {
+                int depth = 0;
+                int j = seedsStart + 9;
+                while (j < json.length()) {
+                    char c = json.charAt(j);
+                    if (c == '[') depth++;
+                    else if (c == ']') { depth--; if (depth == 0) break; }
+                    j++;
+                }
+            }
