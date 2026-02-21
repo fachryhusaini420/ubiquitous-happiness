@@ -600,3 +600,46 @@ public final class UbiquitousHappiness {
         sb.append(",\"currentEpoch\":").append(s.currentEpoch);
         sb.append(",\"totalPrincipal\":").append(s.totalPrincipal);
         sb.append(",\"totalAccruedCheer\":").append(s.totalAccruedCheer);
+        sb.append(",\"protocolFeeBasis\":").append(s.protocolFeeBasis);
+        sb.append(",\"gardenPaused\":").append(s.gardenPaused);
+        sb.append(",\"seeds\":[");
+        for (int i = 0; i < s.seeds.size(); i++) {
+            if (i > 0) sb.append(",");
+            Snapshot.MoodSeedSnapshot m = s.seeds.get(i);
+            sb.append("{\"seedId\":\"").append(escape(m.seedId)).append("\",\"ownerHex\":\"").append(escape(m.ownerHex)).append("\"");
+            sb.append(",\"tierIndex\":").append(m.tierIndex).append(",\"unlockEpoch\":").append(m.unlockEpoch);
+            sb.append(",\"principalWei\":").append(m.principalWei).append(",\"accruedCheerWei\":").append(m.accruedCheerWei).append("}");
+        }
+        sb.append("],\"tiers\":{");
+        boolean first = true;
+        for (Map.Entry<Integer, Snapshot.TierSnapshot> e : s.tiers.entrySet()) {
+            if (!first) sb.append(",");
+            first = false;
+            Snapshot.TierSnapshot t = e.getValue();
+            sb.append("\"").append(e.getKey()).append("\":{\"lockEpochs\":").append(t.lockEpochs).append(",\"weight\":").append(t.weight).append("}");
+        }
+        sb.append("}}");
+        return sb.toString();
+    }
+
+    private static String escape(String x) {
+        if (x == null) return "";
+        return x.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
+    }
+
+    // -------------------------------------------------------------------------
+    // HASH / DOMAIN (mainnet-safe fingerprint)
+    // -------------------------------------------------------------------------
+
+    public byte[] getZinniaDomainHash() throws NoSuchAlgorithmException {
+        MessageDigest md = MessageDigest.getInstance("SHA-256");
+        md.update(ZINNIA_DOMAIN_HEX.getBytes(StandardCharsets.UTF_8));
+        md.update(JOY_CURATOR_HEX.getBytes(StandardCharsets.UTF_8));
+        md.update(Long.toString(deployTimestampMs).getBytes(StandardCharsets.UTF_8));
+        return md.digest();
+    }
+
+    public String getZinniaDomainHashHex() {
+        try {
+            byte[] h = getZinniaDomainHash();
+            StringBuilder sb = new StringBuilder(64);
