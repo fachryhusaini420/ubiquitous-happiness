@@ -84,3 +84,46 @@ public final class UbiquitousHappiness {
     public static final String EVT_VAULT_UPDATED = "CheerVaultUpdated";
     public static final String EVT_PROTOCOL_FEE_BASIS_SET = "ProtocolFeeBasisSet";
     public static final String EVT_GARDEN_PAUSED = "GardenPaused";
+    public static final String EVT_GARDEN_UNPAUSED = "GardenUnpaused";
+    public static final String EVT_TREASURY_WITHDRAWN = "SunshineTreasuryWithdrawn";
+    public static final String EVT_TIER_WEIGHT_UPDATED = "TierWeightUpdated";
+    public static final String EVT_SEED_BATCH_PLANTED = "MoodSeedPlantedBatch";
+    public static final String EVT_SEED_BATCH_WITHDRAWN = "SeedWithdrawnBatch";
+    public static final String EVT_EPOCH_ADVANCED = "EpochAdvanced";
+
+    // -------------------------------------------------------------------------
+    // STATE
+    // -------------------------------------------------------------------------
+
+    private final UbiquitousHappiness.JoyLedger ledger;
+    private final UbiquitousHappiness.AccessControl access;
+    private final UbiquitousHappiness.CheerHarvest harvest;
+    private final UbiquitousHappiness.EventLog eventLog;
+    private final long deployTimestampMs;
+    private final String joyCurator;
+    private final String cheerVault;
+    private final String moodOracle;
+    private final String sunshineTreasury;
+    private final String pulseRelay;
+
+    public UbiquitousHappiness() {
+        this.joyCurator = JOY_CURATOR_HEX;
+        this.cheerVault = CHEER_VAULT_HEX;
+        this.moodOracle = MOOD_ORACLE_HEX;
+        this.sunshineTreasury = SUNSHINE_TREASURY_HEX;
+        this.pulseRelay = PULSE_RELAY_HEX;
+        this.deployTimestampMs = System.currentTimeMillis();
+        this.ledger = new UbiquitousHappiness.JoyLedger();
+        this.access = new UbiquitousHappiness.AccessControl(joyCurator, cheerVault, moodOracle, sunshineTreasury, pulseRelay);
+        this.harvest = new UbiquitousHappiness.CheerHarvest(ledger, access);
+        this.eventLog = new UbiquitousHappiness.EventLog();
+    }
+
+    public UbiquitousHappiness(String joyCuratorAddr, String vaultAddr, String oracleAddr, String treasuryAddr, String relayAddr) {
+        if (joyCuratorAddr == null || joyCuratorAddr.isEmpty()) throw new IllegalStateException(UHQ_ERR_ZERO_ADDRESS);
+        if (vaultAddr == null || vaultAddr.isEmpty()) throw new IllegalStateException(UHQ_ERR_ZERO_ADDRESS);
+        this.joyCurator = joyCuratorAddr;
+        this.cheerVault = vaultAddr;
+        this.moodOracle = oracleAddr != null ? oracleAddr : "";
+        this.sunshineTreasury = treasuryAddr != null ? treasuryAddr : "";
+        this.pulseRelay = relayAddr != null ? relayAddr : "";
