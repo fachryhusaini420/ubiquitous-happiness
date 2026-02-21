@@ -557,3 +557,46 @@ public final class UbiquitousHappiness {
         public static final class TierSnapshot {
             public int tierIndex;
             public long lockEpochs, weight;
+        }
+    }
+
+    public Snapshot takeSnapshot() {
+        Snapshot s = new Snapshot();
+        s.deployTimestampMs = deployTimestampMs;
+        s.currentEpoch = ledger.getCurrentEpoch();
+        s.totalPrincipal = ledger.getTotalPrincipal();
+        s.totalAccruedCheer = ledger.getTotalAccruedCheer();
+        s.protocolFeeBasis = ledger.getProtocolFeeBasis();
+        s.gardenPaused = ledger.isGardenPaused();
+        for (String seedId : ledger.getAllSeedIds()) {
+            MoodSeed m = ledger.getSeed(seedId);
+            if (m == null) continue;
+            Snapshot.MoodSeedSnapshot ms = new Snapshot.MoodSeedSnapshot();
+            ms.seedId = m.getSeedId();
+            ms.ownerHex = m.getOwnerHex();
+            ms.tierIndex = m.getTierIndex();
+            ms.unlockEpoch = m.getUnlockEpoch();
+            ms.principalWei = m.getPrincipalWei();
+            ms.accruedCheerWei = m.getAccruedCheerWei();
+            ms.plantedAtEpoch = m.getPlantedAtEpoch();
+            s.seeds.add(ms);
+        }
+        for (int i = 0; i < ledger.getTierCount(); i++) {
+            TierConfig t = ledger.getTier(i);
+            if (t == null) continue;
+            Snapshot.TierSnapshot ts = new Snapshot.TierSnapshot();
+            ts.tierIndex = t.getTierIndex();
+            ts.lockEpochs = t.getLockEpochs();
+            ts.weight = t.getWeight();
+            s.tiers.put(i, ts);
+        }
+        return s;
+    }
+
+    public String exportSnapshotJson() {
+        Snapshot s = takeSnapshot();
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"deployTimestampMs\":").append(s.deployTimestampMs);
+        sb.append(",\"currentEpoch\":").append(s.currentEpoch);
+        sb.append(",\"totalPrincipal\":").append(s.totalPrincipal);
+        sb.append(",\"totalAccruedCheer\":").append(s.totalAccruedCheer);
