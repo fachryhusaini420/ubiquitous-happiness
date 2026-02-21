@@ -514,3 +514,46 @@ public final class UbiquitousHappiness {
         if (seedIds == null || seedIds.size() > CHEER_BATCH_SIZE) throw new IllegalStateException(UHQ_ERR_BATCH_TOO_LARGE);
         if (ledger.isGardenPaused()) throw new IllegalStateException(UHQ_ERR_GARDEN_PAUSED);
         for (String seedId : seedIds) {
+            MoodSeed s = ledger.getSeed(seedId);
+            if (s != null && s.getOwnerHex().equalsIgnoreCase(callerHex) && ledger.getCurrentEpoch() >= s.getUnlockEpoch())
+                ledger.withdrawSeed(seedId, callerHex);
+        }
+        eventLog.emit(EVT_SEED_BATCH_WITHDRAWN, "owner=" + callerHex + ",count=" + seedIds.size());
+    }
+
+    // -------------------------------------------------------------------------
+    // VIEW FUNCTIONS
+    // -------------------------------------------------------------------------
+
+    public MoodSeed getSeed(String seedId) { return ledger.getSeed(seedId); }
+    public List<String> getSeedIdsForOwner(String ownerHex) { return new ArrayList<>(ledger.getSeedIdsForOwner(ownerHex)); }
+    public TierConfig getTier(int index) { return ledger.getTier(index); }
+    public long getCurrentEpoch() { return ledger.getCurrentEpoch(); }
+    public long getTotalPrincipal() { return ledger.getTotalPrincipal(); }
+    public long getTotalAccruedCheer() { return ledger.getTotalAccruedCheer(); }
+    public boolean isPaused() { return ledger.isGardenPaused(); }
+    public long getProtocolFeeBasis() { return ledger.getProtocolFeeBasis(); }
+
+    // -------------------------------------------------------------------------
+    // SERIALIZATION (persist / restore for mainnet safety)
+    // -------------------------------------------------------------------------
+
+    public static final class Snapshot {
+        public long deployTimestampMs;
+        public long currentEpoch;
+        public long totalPrincipal;
+        public long totalAccruedCheer;
+        public long protocolFeeBasis;
+        public boolean gardenPaused;
+        public List<MoodSeedSnapshot> seeds = new ArrayList<>();
+        public Map<Integer, TierSnapshot> tiers = new HashMap<>();
+
+        public static final class MoodSeedSnapshot {
+            public String seedId, ownerHex;
+            public int tierIndex;
+            public long unlockEpoch, principalWei, accruedCheerWei, plantedAtEpoch;
+        }
+
+        public static final class TierSnapshot {
+            public int tierIndex;
+            public long lockEpochs, weight;
