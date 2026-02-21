@@ -170,3 +170,46 @@ public final class UbiquitousHappiness {
 
         public String getSeedId() { return seedId; }
         public String getOwnerHex() { return ownerHex; }
+        public int getTierIndex() { return tierIndex; }
+        public long getUnlockEpoch() { return unlockEpoch; }
+        public long getPrincipalWei() { return principalWei; }
+        public long getAccruedCheerWei() { return accruedCheerWei; }
+        public long getPlantedAtEpoch() { return plantedAtEpoch; }
+        public void addPrincipal(long amount) { this.principalWei += amount; }
+        public void addAccruedCheer(long amount) { this.accruedCheerWei += amount; }
+        public void setPrincipal(long value) { this.principalWei = value; }
+        public void setAccruedCheer(long value) { this.accruedCheerWei = value; }
+    }
+
+    // -------------------------------------------------------------------------
+    // TIER CONFIG
+    // -------------------------------------------------------------------------
+
+    public static final class TierConfig {
+        private final int tierIndex;
+        private long lockEpochs;
+        private long weight;
+
+        public TierConfig(int tierIndex, long lockEpochs, long weight) {
+            this.tierIndex = tierIndex;
+            this.lockEpochs = lockEpochs;
+            this.weight = weight;
+        }
+
+        public int getTierIndex() { return tierIndex; }
+        public long getLockEpochs() { return lockEpochs; }
+        public long getWeight() { return weight; }
+        public void setLockEpochs(long v) { this.lockEpochs = v; }
+        public void setWeight(long v) { this.weight = v; }
+    }
+
+    // -------------------------------------------------------------------------
+    // JOY LEDGER (state storage)
+    // -------------------------------------------------------------------------
+
+    public static final class JoyLedger {
+        private final Map<String, MoodSeed> seedsById = new ConcurrentHashMap<>();
+        private final Map<String, List<String>> seedIdsByOwner = new ConcurrentHashMap<>();
+        private final Map<Integer, TierConfig> tiersByIndex = new ConcurrentHashMap<>();
+        private final AtomicLong currentEpoch = new AtomicLong(1L);
+        private final AtomicLong totalPrincipal = new AtomicLong(0L);
