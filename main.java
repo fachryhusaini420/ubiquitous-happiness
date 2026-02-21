@@ -471,3 +471,46 @@ public final class UbiquitousHappiness {
         ledger.setProtocolFeeBasis(basis);
         eventLog.emit(EVT_PROTOCOL_FEE_BASIS_SET, String.format("previous=%d,new=%d", prev, basis));
     }
+
+    public void setTierWeight(String curatorHex, int tierIndex, long weight) {
+        if (!access.isJoyCurator(curatorHex)) throw new IllegalStateException(UHQ_ERR_NOT_JOY_CURATOR);
+        ledger.setTierWeight(tierIndex, weight);
+        eventLog.emit(EVT_TIER_WEIGHT_UPDATED, String.format("tier=%d,weight=%d", tierIndex, weight));
+    }
+
+    public void pauseGarden(String curatorHex) {
+        if (!access.isJoyCurator(curatorHex)) throw new IllegalStateException(UHQ_ERR_NOT_JOY_CURATOR);
+        ledger.setGardenPaused(true);
+        eventLog.emit(EVT_GARDEN_PAUSED, "by=" + curatorHex);
+    }
+
+    public void unpauseGarden(String curatorHex) {
+        if (!access.isJoyCurator(curatorHex)) throw new IllegalStateException(UHQ_ERR_NOT_JOY_CURATOR);
+        ledger.setGardenPaused(false);
+        eventLog.emit(EVT_GARDEN_UNPAUSED, "by=" + curatorHex);
+    }
+
+    public void advanceEpoch(String oracleHex) {
+        if (!access.isMoodOracle(oracleHex)) throw new IllegalStateException(UHQ_ERR_NOT_ORACLE);
+        long prev = ledger.getCurrentEpoch();
+        ledger.advanceEpoch();
+        eventLog.emit(EVT_EPOCH_ADVANCED, String.format("previous=%d,new=%d", prev, ledger.getCurrentEpoch()));
+    }
+
+    public List<MoodSeed> plantMoodSeedBatch(String ownerHex, int[] tierIndices, long[] principalAmounts) {
+        if (tierIndices == null || principalAmounts == null || tierIndices.length != principalAmounts.length)
+            throw new IllegalStateException(UHQ_ERR_ARRAY_LENGTH_MISMATCH);
+        if (tierIndices.length > CHEER_BATCH_SIZE) throw new IllegalStateException(UHQ_ERR_BATCH_TOO_LARGE);
+        if (ledger.isGardenPaused()) throw new IllegalStateException(UHQ_ERR_GARDEN_PAUSED);
+        List<MoodSeed> result = new ArrayList<>();
+        for (int i = 0; i < tierIndices.length; i++) {
+            result.add(ledger.plantSeed(ownerHex, tierIndices[i], principalAmounts[i]));
+        }
+        eventLog.emit(EVT_SEED_BATCH_PLANTED, String.format("owner=%s,count=%d", ownerHex, result.size()));
+        return result;
+    }
+
+    public void withdrawMoodSeedBatch(String callerHex, List<String> seedIds) {
+        if (seedIds == null || seedIds.size() > CHEER_BATCH_SIZE) throw new IllegalStateException(UHQ_ERR_BATCH_TOO_LARGE);
+        if (ledger.isGardenPaused()) throw new IllegalStateException(UHQ_ERR_GARDEN_PAUSED);
+        for (String seedId : seedIds) {
