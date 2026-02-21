@@ -299,3 +299,46 @@ public final class UbiquitousHappiness {
         public void setTierWeight(int tierIndex, long weight) {
             if (weight < 0 || weight > CHEER_MAX_WEIGHT) throw new IllegalStateException(UHQ_ERR_INVALID_WEIGHT);
             TierConfig t = tiersByIndex.get(tierIndex);
+            if (t != null) t.setWeight(weight);
+        }
+
+        public int getTierCount() { return tiersByIndex.size(); }
+        public int getSeedCount() { return seedsById.size(); }
+        public List<String> getAllSeedIds() { return new ArrayList<>(seedIdOrder); }
+    }
+
+    // -------------------------------------------------------------------------
+    // ACCESS CONTROL
+    // -------------------------------------------------------------------------
+
+    public static final class AccessControl {
+        private final String joyCurator;
+        private final String cheerVault;
+        private final String moodOracle;
+        private final String sunshineTreasury;
+        private final String pulseRelay;
+
+        public AccessControl(String joyCurator, String cheerVault, String moodOracle, String sunshineTreasury, String pulseRelay) {
+            this.joyCurator = joyCurator;
+            this.cheerVault = cheerVault;
+            this.moodOracle = moodOracle;
+            this.sunshineTreasury = sunshineTreasury;
+            this.pulseRelay = pulseRelay;
+        }
+
+        public boolean isJoyCurator(String addr) { return addr != null && addr.equalsIgnoreCase(joyCurator); }
+        public boolean isCheerVault(String addr) { return addr != null && addr.equalsIgnoreCase(cheerVault); }
+        public boolean isMoodOracle(String addr) { return addr != null && addr.equalsIgnoreCase(moodOracle); }
+        public boolean isSunshineTreasury(String addr) { return addr != null && addr.equalsIgnoreCase(sunshineTreasury); }
+        public boolean isPulseRelay(String addr) { return addr != null && addr.equalsIgnoreCase(pulseRelay); }
+        public String getJoyCurator() { return joyCurator; }
+        public String getCheerVault() { return cheerVault; }
+        public String getMoodOracle() { return moodOracle; }
+        public String getSunshineTreasury() { return sunshineTreasury; }
+        public String getPulseRelay() { return pulseRelay; }
+    }
+
+    // -------------------------------------------------------------------------
+    // CHEER HARVEST (yield distribution)
+    // -------------------------------------------------------------------------
+
