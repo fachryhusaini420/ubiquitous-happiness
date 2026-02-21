@@ -256,3 +256,46 @@ public final class UbiquitousHappiness {
                 if (owned.size() >= CHEER_MAX_SEEDS_PER_HOLDER) throw new IllegalStateException(UHQ_ERR_MAX_SEEDS_PER_HOLDER);
             }
             long unlockEpoch = currentEpoch.get() + tier.getLockEpochs();
+            String seedId = nextSeedId();
+            MoodSeed seed = new MoodSeed(seedId, ownerHex, tierIndex, unlockEpoch, principalWei);
+            seedsById.put(seedId, seed);
+            getSeedIdsForOwner(ownerHex).add(seedId);
+            seedIdOrder.add(seedId);
+            totalPrincipal.addAndGet(principalWei);
+            return seed;
+        }
+
+        public void addPrincipalToSeed(String seedId, long amount) {
+            MoodSeed seed = seedsById.get(seedId);
+            if (seed == null) throw new IllegalStateException(UHQ_ERR_SEED_NOT_FOUND);
+            if (amount <= 0) throw new IllegalStateException(UHQ_ERR_ZERO_DEPOSIT);
+            seed.addPrincipal(amount);
+            totalPrincipal.addAndGet(amount);
+        }
+
+        public void withdrawSeed(String seedId, String callerHex) {
+            MoodSeed seed = seedsById.get(seedId);
+            if (seed == null) throw new IllegalStateException(UHQ_ERR_SEED_NOT_FOUND);
+            if (!seed.getOwnerHex().equalsIgnoreCase(callerHex)) throw new IllegalStateException(UHQ_ERR_NOT_SEED_OWNER);
+            if (currentEpoch.get() < seed.getUnlockEpoch()) throw new IllegalStateException(UHQ_ERR_SEED_LOCKED);
+            long p = seed.getPrincipalWei();
+            long c = seed.getAccruedCheerWei();
+            if (p == 0 && c == 0) throw new IllegalStateException(UHQ_ERR_WITHDRAW_ZERO);
+            totalPrincipal.addAndGet(-p);
+            totalAccruedCheer.addAndGet(-c);
+            seedsById.remove(seedId);
+            List<String> owned = getSeedIdsForOwner(callerHex);
+            synchronized (owned) { owned.remove(seedId); }
+            seedIdOrder.remove(seedId);
+        }
+
+        public void accrueCheerToSeed(String seedId, long amount) {
+            MoodSeed seed = seedsById.get(seedId);
+            if (seed == null) return;
+            seed.addAccruedCheer(amount);
+            totalAccruedCheer.addAndGet(amount);
+        }
+
+        public void setTierWeight(int tierIndex, long weight) {
+            if (weight < 0 || weight > CHEER_MAX_WEIGHT) throw new IllegalStateException(UHQ_ERR_INVALID_WEIGHT);
+            TierConfig t = tiersByIndex.get(tierIndex);
