@@ -643,3 +643,46 @@ public final class UbiquitousHappiness {
         try {
             byte[] h = getZinniaDomainHash();
             StringBuilder sb = new StringBuilder(64);
+            for (byte b : h) sb.append(String.format("%02x", b & 0xff));
+            return "0x" + sb.toString();
+        } catch (NoSuchAlgorithmException e) { throw new RuntimeException(e); }
+    }
+
+    // -------------------------------------------------------------------------
+    // TIER STATS AND AGGREGATES
+    // -------------------------------------------------------------------------
+
+    public static final class TierStats {
+        public final int tierIndex;
+        public final long totalPrincipal;
+        public final long totalAccruedCheer;
+        public final int activeSeedCount;
+        public final long lockEpochs;
+        public final long weight;
+
+        public TierStats(int tierIndex, long totalPrincipal, long totalAccruedCheer, int activeSeedCount, long lockEpochs, long weight) {
+            this.tierIndex = tierIndex;
+            this.totalPrincipal = totalPrincipal;
+            this.totalAccruedCheer = totalAccruedCheer;
+            this.activeSeedCount = activeSeedCount;
+            this.lockEpochs = lockEpochs;
+            this.weight = weight;
+        }
+    }
+
+    public List<TierStats> getTierStats() {
+        List<TierStats> out = new ArrayList<>();
+        long epoch = ledger.getCurrentEpoch();
+        for (int i = 0; i < ledger.getTierCount(); i++) {
+            TierConfig t = ledger.getTier(i);
+            if (t == null) continue;
+            long principal = 0, cheer = 0;
+            int count = 0;
+            for (String sid : ledger.getAllSeedIds()) {
+                MoodSeed s = ledger.getSeed(sid);
+                if (s != null && s.getTierIndex() == i && epoch < s.getUnlockEpoch()) {
+                    principal += s.getPrincipalWei();
+                    cheer += s.getAccruedCheerWei();
+                    count++;
+                }
+            }
