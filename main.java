@@ -127,3 +127,46 @@ public final class UbiquitousHappiness {
         this.moodOracle = oracleAddr != null ? oracleAddr : "";
         this.sunshineTreasury = treasuryAddr != null ? treasuryAddr : "";
         this.pulseRelay = relayAddr != null ? relayAddr : "";
+        this.deployTimestampMs = System.currentTimeMillis();
+        this.ledger = new UbiquitousHappiness.JoyLedger();
+        this.access = new UbiquitousHappiness.AccessControl(joyCurator, cheerVault, moodOracle, sunshineTreasury, pulseRelay);
+        this.harvest = new UbiquitousHappiness.CheerHarvest(ledger, access);
+        this.eventLog = new UbiquitousHappiness.EventLog();
+    }
+
+    public UbiquitousHappiness.JoyLedger getLedger() { return ledger; }
+    public UbiquitousHappiness.AccessControl getAccess() { return access; }
+    public UbiquitousHappiness.CheerHarvest getHarvest() { return harvest; }
+    public UbiquitousHappiness.EventLog getEventLog() { return eventLog; }
+    public long getDeployTimestampMs() { return deployTimestampMs; }
+    public String getJoyCurator() { return joyCurator; }
+    public String getCheerVault() { return cheerVault; }
+    public String getMoodOracle() { return moodOracle; }
+    public String getSunshineTreasury() { return sunshineTreasury; }
+    public String getPulseRelay() { return pulseRelay; }
+
+    // -------------------------------------------------------------------------
+    // MOOD SEED (per-user lock bucket)
+    // -------------------------------------------------------------------------
+
+    public static final class MoodSeed {
+        private final String seedId;
+        private final String ownerHex;
+        private final int tierIndex;
+        private final long unlockEpoch;
+        private long principalWei;
+        private long accruedCheerWei;
+        private final long plantedAtEpoch;
+
+        public MoodSeed(String seedId, String ownerHex, int tierIndex, long unlockEpoch, long principalWei) {
+            this.seedId = Objects.requireNonNull(seedId);
+            this.ownerHex = Objects.requireNonNull(ownerHex);
+            this.tierIndex = tierIndex;
+            this.unlockEpoch = unlockEpoch;
+            this.principalWei = principalWei;
+            this.accruedCheerWei = 0L;
+            this.plantedAtEpoch = unlockEpoch - 1;
+        }
+
+        public String getSeedId() { return seedId; }
+        public String getOwnerHex() { return ownerHex; }
