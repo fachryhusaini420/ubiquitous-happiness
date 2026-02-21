@@ -213,3 +213,46 @@ public final class UbiquitousHappiness {
         private final Map<Integer, TierConfig> tiersByIndex = new ConcurrentHashMap<>();
         private final AtomicLong currentEpoch = new AtomicLong(1L);
         private final AtomicLong totalPrincipal = new AtomicLong(0L);
+        private final AtomicLong totalAccruedCheer = new AtomicLong(0L);
+        private volatile long protocolFeeBasis = 25;
+        private volatile boolean gardenPaused = false;
+        private final AtomicLong seedIdCounter = new AtomicLong(1000L);
+        private final List<String> seedIdOrder = Collections.synchronizedList(new ArrayList<>());
+
+        public JoyLedger() {
+            for (int i = 0; i < CHEER_MAX_MOOD_TIERS; i++) {
+                long lock = CHEER_MIN_LOCK_EPOCHS * (1L << Math.min(i, 4));
+                long w = 500 + (i * 200);
+                tiersByIndex.put(i, new TierConfig(i, lock, Math.min(w, CHEER_MAX_WEIGHT)));
+            }
+        }
+
+        public MoodSeed getSeed(String seedId) { return seedsById.get(seedId); }
+        public TierConfig getTier(int index) { return tiersByIndex.get(index); }
+        public long getCurrentEpoch() { return currentEpoch.get(); }
+        public long getTotalPrincipal() { return totalPrincipal.get(); }
+        public long getTotalAccruedCheer() { return totalAccruedCheer.get(); }
+        public long getProtocolFeeBasis() { return protocolFeeBasis; }
+        public boolean isGardenPaused() { return gardenPaused; }
+        public void setProtocolFeeBasis(long basis) { this.protocolFeeBasis = basis; }
+        public void setGardenPaused(boolean paused) { this.gardenPaused = paused; }
+        public void advanceEpoch() { currentEpoch.incrementAndGet(); }
+        public List<String> getSeedIdsForOwner(String ownerHex) {
+            return seedIdsByOwner.computeIfAbsent(ownerHex, k -> Collections.synchronizedList(new ArrayList<>()));
+        }
+
+        public String nextSeedId() {
+            long id = seedIdCounter.incrementAndGet();
+            return "UHQ_SEED_" + Long.toHexString(id) + "_" + Long.toHexString(System.nanoTime() & 0xFFFF);
+        }
+
+        public MoodSeed plantSeed(String ownerHex, int tierIndex, long principalWei) {
+            if (principalWei <= 0) throw new IllegalStateException(UHQ_ERR_ZERO_DEPOSIT);
+            TierConfig tier = tiersByIndex.get(tierIndex);
+            if (tier == null) throw new IllegalStateException(UHQ_ERR_INVALID_TIER);
+            if (tier.getLockEpochs() < CHEER_MIN_LOCK_EPOCHS) throw new IllegalStateException(UHQ_ERR_MIN_LOCK_EPOCHS);
+            List<String> owned = getSeedIdsForOwner(ownerHex);
+            synchronized (owned) {
+                if (owned.size() >= CHEER_MAX_SEEDS_PER_HOLDER) throw new IllegalStateException(UHQ_ERR_MAX_SEEDS_PER_HOLDER);
+            }
+            long unlockEpoch = currentEpoch.get() + tier.getLockEpochs();
