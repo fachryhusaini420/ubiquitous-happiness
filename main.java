@@ -385,3 +385,46 @@ public final class UbiquitousHappiness {
                 if (s == null || ledger.getCurrentEpoch() >= s.getUnlockEpoch()) continue;
                 TierConfig t = ledger.getTier(s.getTierIndex());
                 if (t == null) continue;
+                long tierPrincipal = principalByTier.getOrDefault(s.getTierIndex(), 0L);
+                if (tierPrincipal <= 0) continue;
+                long share = (toDistribute * t.getWeight() * s.getPrincipalWei()) / tierDenom;
+                if (share > 0) ledger.accrueCheerToSeed(sid, share);
+            }
+            return treasuryShare;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // EVENT LOG
+    // -------------------------------------------------------------------------
+
+    public static final class EventEntry {
+        public final String eventName;
+        public final String payload;
+        public final long timestampMs;
+
+        public EventEntry(String eventName, String payload, long timestampMs) {
+            this.eventName = eventName;
+            this.payload = payload;
+            this.timestampMs = timestampMs;
+        }
+    }
+
+    public static final class EventLog {
+        private final List<EventEntry> entries = Collections.synchronizedList(new ArrayList<>());
+        private static final int MAX_ENTRIES = 10_000;
+
+        public void emit(String eventName, String payload) {
+            entries.add(new EventEntry(eventName, payload, System.currentTimeMillis()));
+            while (entries.size() > MAX_ENTRIES) entries.remove(0);
+        }
+
+        public List<EventEntry> getRecent(int n) {
+            int size = entries.size();
+            if (n >= size) return new ArrayList<>(entries);
+            return new ArrayList<>(entries.subList(size - n, size));
+        }
+
+        public int size() { return entries.size(); }
+    }
+
