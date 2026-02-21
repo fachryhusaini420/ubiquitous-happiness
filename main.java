@@ -686,3 +686,46 @@ public final class UbiquitousHappiness {
                     count++;
                 }
             }
+            out.add(new TierStats(i, principal, cheer, count, t.getLockEpochs(), t.getWeight()));
+        }
+        return out;
+    }
+
+    public Map<String, Long> getHolderBalances() {
+        Map<String, Long> totalByOwner = new HashMap<>();
+        for (String sid : ledger.getAllSeedIds()) {
+            MoodSeed s = ledger.getSeed(sid);
+            if (s == null) continue;
+            String o = s.getOwnerHex();
+            long v = s.getPrincipalWei() + s.getAccruedCheerWei();
+            totalByOwner.merge(o, v, Long::sum);
+        }
+        return totalByOwner;
+    }
+
+    public List<MoodSeed> getSeedsForOwner(String ownerHex) {
+        List<MoodSeed> out = new ArrayList<>();
+        for (String sid : ledger.getSeedIdsForOwner(ownerHex)) {
+            MoodSeed s = ledger.getSeed(sid);
+            if (s != null) out.add(s);
+        }
+        return out;
+    }
+
+    public List<MoodSeed> getUnlockedSeedsForOwner(String ownerHex) {
+        long epoch = ledger.getCurrentEpoch();
+        return getSeedsForOwner(ownerHex).stream()
+                .filter(s -> epoch >= s.getUnlockEpoch())
+                .collect(Collectors.toList());
+    }
+
+    public List<MoodSeed> getLockedSeedsForOwner(String ownerHex) {
+        long epoch = ledger.getCurrentEpoch();
+        return getSeedsForOwner(ownerHex).stream()
+                .filter(s -> epoch < s.getUnlockEpoch())
+                .collect(Collectors.toList());
+    }
+
+    // -------------------------------------------------------------------------
+    // GAS / CYCLE ESTIMATION (EVM-style cost hints)
+    // -------------------------------------------------------------------------
