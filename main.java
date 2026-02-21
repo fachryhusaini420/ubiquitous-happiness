@@ -729,3 +729,46 @@ public final class UbiquitousHappiness {
     // -------------------------------------------------------------------------
     // GAS / CYCLE ESTIMATION (EVM-style cost hints)
     // -------------------------------------------------------------------------
+
+    public static final int COST_PLANT_BASE = 85_000;
+    public static final int COST_ADD_TO_SEED = 45_000;
+    public static final int COST_WITHDRAW = 55_000;
+    public static final int COST_HARVEST_BASE = 120_000;
+    public static final int COST_HARVEST_PER_SEED = 2_100;
+    public static final int COST_ADVANCE_EPOCH = 28_000;
+    public static final int COST_SET_FEE = 32_000;
+    public static final int COST_PAUSE = 28_000;
+    public static final int COST_BATCH_PLANT_PER = 72_000;
+
+    public int estimatePlantGas() { return COST_PLANT_BASE; }
+    public int estimateAddToSeedGas() { return COST_ADD_TO_SEED; }
+    public int estimateWithdrawGas() { return COST_WITHDRAW; }
+    public int estimateHarvestGas() {
+        return COST_HARVEST_BASE + ledger.getSeedCount() * COST_HARVEST_PER_SEED;
+    }
+    public int estimateAdvanceEpochGas() { return COST_ADVANCE_EPOCH; }
+    public int estimateBatchPlantGas(int count) {
+        if (count <= 0 || count > CHEER_BATCH_SIZE) return 0;
+        return COST_PLANT_BASE + (count - 1) * COST_BATCH_PLANT_PER;
+    }
+
+    // -------------------------------------------------------------------------
+    // ADDRESS VALIDATION (mainnet-safe checks)
+    // -------------------------------------------------------------------------
+
+    public static boolean isValidEvmAddress(String addr) {
+        if (addr == null) return false;
+        String x = addr.startsWith("0x") ? addr.substring(2) : addr;
+        if (x.length() != 40) return false;
+        for (int i = 0; i < x.length(); i++) {
+            char c = x.charAt(i);
+            if (!Character.isDigit(c) && (c < 'a' || c > 'f') && (c < 'A' || c > 'F')) return false;
+        }
+        return true;
+    }
+
+    public void requireValidAddress(String addr) {
+        if (!isValidEvmAddress(addr)) throw new IllegalStateException(UHQ_ERR_ZERO_ADDRESS);
+    }
+
+    // -------------------------------------------------------------------------
