@@ -41,3 +41,46 @@ public final class UbiquitousHappiness {
     public static final int CHEER_MAX_LOCK_EPOCHS = 65_536;
     public static final int CHEER_BATCH_SIZE = 24;
     public static final long CHEER_SCALE = 1_000_000_000_000_000_000L;
+    public static final int CHEER_MAX_WEIGHT = 10_000;
+    public static final int UHQ_VERSION_MAJOR = 2;
+    public static final int UHQ_VERSION_MINOR = 1;
+    public static final String UHQ_ENGINE_TAG = "ubiquitous-happiness-v2.1";
+
+    // -------------------------------------------------------------------------
+    // ERROR CODES (unique; not used in other contracts)
+    // -------------------------------------------------------------------------
+
+    public static final String UHQ_ERR_ZERO_DEPOSIT = "UHQ_ZeroDeposit";
+    public static final String UHQ_ERR_ZERO_ADDRESS = "UHQ_ZeroAddress";
+    public static final String UHQ_ERR_NOT_JOY_CURATOR = "UHQ_NotJoyCurator";
+    public static final String UHQ_ERR_NOT_VAULT = "UHQ_NotVault";
+    public static final String UHQ_ERR_TRANSFER_FAILED = "UHQ_TransferFailed";
+    public static final String UHQ_ERR_SEED_LOCKED = "UHQ_SeedLocked";
+    public static final String UHQ_ERR_SEED_NOT_FOUND = "UHQ_SeedNotFound";
+    public static final String UHQ_ERR_NOT_SEED_OWNER = "UHQ_NotSeedOwner";
+    public static final String UHQ_ERR_INVALID_TIER = "UHQ_InvalidTier";
+    public static final String UHQ_ERR_HARVEST_ZERO = "UHQ_HarvestZero";
+    public static final String UHQ_ERR_GARDEN_PAUSED = "UHQ_GardenPaused";
+    public static final String UHQ_ERR_FEE_BASIS_TOO_HIGH = "UHQ_FeeBasisTooHigh";
+    public static final String UHQ_ERR_WITHDRAW_ZERO = "UHQ_WithdrawZero";
+    public static final String UHQ_ERR_ARRAY_LENGTH_MISMATCH = "UHQ_ArrayLengthMismatch";
+    public static final String UHQ_ERR_MAX_SEEDS_PER_HOLDER = "UHQ_MaxSeedsPerHolder";
+    public static final String UHQ_ERR_MIN_LOCK_EPOCHS = "UHQ_MinLockEpochs";
+    public static final String UHQ_ERR_BATCH_TOO_LARGE = "UHQ_BatchTooLarge";
+    public static final String UHQ_ERR_INVALID_WEIGHT = "UHQ_InvalidWeight";
+    public static final String UHQ_ERR_NOT_ORACLE = "UHQ_NotOracle";
+    public static final String UHQ_ERR_NOT_RELAY = "UHQ_NotRelay";
+
+    // -------------------------------------------------------------------------
+    // EVENT NAMES (unique signatures)
+    // -------------------------------------------------------------------------
+
+    public static final String EVT_JOY_PULSE_RECORDED = "JoyPulseRecorded";
+    public static final String EVT_MOOD_SEED_PLANTED = "MoodSeedPlanted";
+    public static final String EVT_CHEER_ORB_DISTRIBUTED = "CheerOrbDistributed";
+    public static final String EVT_SEED_WITHDRAWN = "SeedWithdrawn";
+    public static final String EVT_ALLOCATED_TO_TIER = "CheerAllocatedToTier";
+    public static final String EVT_CURATOR_UPDATED = "JoyCuratorUpdated";
+    public static final String EVT_VAULT_UPDATED = "CheerVaultUpdated";
+    public static final String EVT_PROTOCOL_FEE_BASIS_SET = "ProtocolFeeBasisSet";
+    public static final String EVT_GARDEN_PAUSED = "GardenPaused";
