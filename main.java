@@ -901,3 +901,46 @@ public final class UbiquitousHappiness {
         m.put("pulseRelay", pulseRelay);
         m.put("deployTimestampMs", deployTimestampMs);
         m.put("currentEpoch", ledger.getCurrentEpoch());
+        m.put("totalPrincipal", ledger.getTotalPrincipal());
+        m.put("totalAccruedCheer", ledger.getTotalAccruedCheer());
+        m.put("protocolFeeBasis", ledger.getProtocolFeeBasis());
+        m.put("gardenPaused", ledger.isGardenPaused());
+        m.put("tierCount", ledger.getTierCount());
+        m.put("seedCount", ledger.getSeedCount());
+        m.put("versionMajor", UHQ_VERSION_MAJOR);
+        m.put("versionMinor", UHQ_VERSION_MINOR);
+        return m;
+    }
+
+    public String getPublicConfigJson() {
+        Map<String, Object> m = getPublicConfig();
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        boolean first = true;
+        for (Map.Entry<String, Object> e : m.entrySet()) {
+            if (!first) sb.append(",");
+            first = false;
+            sb.append("\"").append(e.getKey()).append("\":");
+            Object v = e.getValue();
+            if (v instanceof String) sb.append("\"").append(escape((String) v)).append("\"");
+            else if (v instanceof Boolean) sb.append(v.toString());
+            else sb.append(v);
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    // -------------------------------------------------------------------------
+    // BATCH VIEW (efficient multi-owner lookup)
+    // -------------------------------------------------------------------------
+
+    public Map<String, List<MoodSeed>> getSeedsByOwnerBatch(List<String> ownerHexList) {
+        Map<String, List<MoodSeed>> out = new HashMap<>();
+        for (String owner : ownerHexList) {
+            if (owner == null) continue;
+            out.put(owner, getSeedsForOwner(owner));
+        }
+        return out;
+    }
+
+    public List<String> getOwnerHexList() {
