@@ -944,3 +944,46 @@ public final class UbiquitousHappiness {
     }
 
     public List<String> getOwnerHexList() {
+        Set<String> set = new HashSet<>();
+        for (String sid : ledger.getAllSeedIds()) {
+            MoodSeed s = ledger.getSeed(sid);
+            if (s != null) set.add(s.getOwnerHex());
+        }
+        return new ArrayList<>(set);
+    }
+
+    // -------------------------------------------------------------------------
+    // CHEER SCALE HELPERS (human-readable formatting)
+    // -------------------------------------------------------------------------
+
+    public static String formatCheerWei(long wei) {
+        if (wei >= CHEER_SCALE) return String.format("%.4f", (double) wei / CHEER_SCALE);
+        return String.valueOf(wei);
+    }
+
+    public static long parseCheerWei(String input) {
+        if (input == null || input.trim().isEmpty()) return 0L;
+        String s = input.trim();
+        boolean floatMode = s.contains(".") || s.contains("e") || s.contains("E");
+        if (floatMode) {
+            try {
+                double d = Double.parseDouble(s);
+                return (long) (d * CHEER_SCALE);
+            } catch (NumberFormatException e) { return 0L; }
+        }
+        try {
+            return Long.parseLong(s);
+        } catch (NumberFormatException e) { return 0L; }
+    }
+
+    // -------------------------------------------------------------------------
+    // HEX / BYTES UTILITIES (unique; not shared with other contracts)
+    // -------------------------------------------------------------------------
+
+    public static final String UHQ_PREFIX = "0x5c9e2b"; // Zinnia prefix
+
+    public static String toChecksumAddress(String addr) {
+        if (addr == null || addr.length() < 42) return addr;
+        String hex = addr.startsWith("0x") ? addr.substring(2) : addr;
+        if (hex.length() != 40) return addr;
+        try {
