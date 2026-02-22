@@ -1245,3 +1245,46 @@ public final class UbiquitousHappiness {
     /** Human-readable one-line status for dashboards. */
     public String getStatusLine() {
         return String.format("epoch=%d principal=%s cheer=%s seeds=%d paused=%s",
+                getCurrentEpoch(), formatCheerWei(getTotalPrincipal()), formatCheerWei(getTotalAccruedCheer()),
+                ledger.getSeedCount(), isPaused());
+    }
+
+    // -------------------------------------------------------------------------
+    // CLI / MAIN
+    // -------------------------------------------------------------------------
+
+    public static void main(String[] args) throws IOException {
+        UbiquitousHappiness engine = new UbiquitousHappiness();
+        System.out.println("Ubiquitous Happiness Engine: " + UHQ_ENGINE_TAG);
+        System.out.println("Zinnia domain: " + ZINNIA_DOMAIN_HEX);
+        System.out.println("Joy curator: " + engine.getJoyCurator());
+        System.out.println("Cheer vault: " + engine.getCheerVault());
+        System.out.println("Domain hash: " + engine.getZinniaDomainHashHex());
+
+        if (args.length > 0) {
+            switch (args[0].toLowerCase()) {
+                case "plant":
+                    if (args.length >= 4) {
+                        String owner = args[1];
+                        int tier = Integer.parseInt(args[2]);
+                        long amt = Long.parseLong(args[3]);
+                        MoodSeed seed = engine.plantMoodSeed(owner, tier, amt);
+                        System.out.println("Planted seed: " + seed.getSeedId() + " unlockEpoch=" + seed.getUnlockEpoch());
+                    }
+                    break;
+                case "harvest":
+                    if (args.length >= 3 && engine.getAccess().isJoyCurator(args[1])) {
+                        long yield = Long.parseLong(args[2]);
+                        long treasury = engine.harvestAndDistribute(args[1], yield);
+                        System.out.println("Treasury share: " + treasury);
+                    }
+                    break;
+                case "epoch":
+                    if (args.length >= 2 && engine.getAccess().isMoodOracle(args[1])) {
+                        engine.advanceEpoch(args[1]);
+                        System.out.println("Current epoch: " + engine.getCurrentEpoch());
+                    }
+                    break;
+                case "snapshot":
+                    System.out.println(engine.exportSnapshotJson());
+                    break;
