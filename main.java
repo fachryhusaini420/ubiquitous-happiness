@@ -1073,3 +1073,46 @@ public final class UbiquitousHappiness {
         public final String data;
         public final String errorCode;
 
+        public CallResult(boolean success, String data, String errorCode) {
+            this.success = success;
+            this.data = data;
+            this.errorCode = errorCode;
+        }
+    }
+
+    public CallResult execute(String selector, Map<String, Object> params) {
+        try {
+            if (SELECTOR_PLANT.equals(selector)) {
+                String owner = (String) params.get("owner");
+                int tier = ((Number) params.getOrDefault("tier", 0)).intValue();
+                long amt = ((Number) params.getOrDefault("amountWei", 0L)).longValue();
+                MoodSeed seed = plantMoodSeed(owner, tier, amt);
+                return new CallResult(true, "{\"seedId\":\"" + seed.getSeedId() + "\",\"unlockEpoch\":" + seed.getUnlockEpoch() + "}", null);
+            }
+            if (SELECTOR_ADD_TO_SEED.equals(selector)) {
+                String caller = (String) params.get("caller");
+                String seedId = (String) params.get("seedId");
+                long amt = ((Number) params.getOrDefault("amountWei", 0L)).longValue();
+                addToSeed(caller, seedId, amt);
+                return new CallResult(true, "{}", null);
+            }
+            if (SELECTOR_WITHDRAW.equals(selector)) {
+                String caller = (String) params.get("caller");
+                String seedId = (String) params.get("seedId");
+                withdrawMoodSeed(caller, seedId);
+                return new CallResult(true, "{}", null);
+            }
+            if (SELECTOR_HARVEST.equals(selector)) {
+                String curator = (String) params.get("curator");
+                long yield = ((Number) params.getOrDefault("yieldWei", 0L)).longValue();
+                long treasury = harvestAndDistribute(curator, yield);
+                return new CallResult(true, "{\"treasuryShare\":" + treasury + "}", null);
+            }
+            if (SELECTOR_SET_FEE.equals(selector)) {
+                String curator = (String) params.get("curator");
+                long basis = ((Number) params.getOrDefault("basis", 0L)).longValue();
+                setProtocolFeeBasis(curator, basis);
+                return new CallResult(true, "{}", null);
+            }
+            if (SELECTOR_PAUSE.equals(selector)) {
+                pauseGarden((String) params.get("curator"));
