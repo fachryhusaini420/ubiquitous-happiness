@@ -987,3 +987,46 @@ public final class UbiquitousHappiness {
         String hex = addr.startsWith("0x") ? addr.substring(2) : addr;
         if (hex.length() != 40) return addr;
         try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(hex.toLowerCase().getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder("0x");
+            for (int i = 0; i < 40; i++) {
+                char c = hex.charAt(i);
+                int nibble = (hash[i / 2] >> (4 - (i % 2) * 4)) & 0xf;
+                if (nibble >= 8) sb.append(Character.toUpperCase(c));
+                else sb.append(Character.toLowerCase(c));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) { return addr; }
+    }
+
+    public static boolean addressEquals(String a, String b) {
+        if (a == null || b == null) return a == b;
+        return a.equalsIgnoreCase(b);
+    }
+
+    // -------------------------------------------------------------------------
+    // VALIDATION HELPERS
+    // -------------------------------------------------------------------------
+
+    public void requireNotPaused() {
+        if (ledger.isGardenPaused()) throw new IllegalStateException(UHQ_ERR_GARDEN_PAUSED);
+    }
+
+    public void requireJoyCurator(String addr) {
+        if (!access.isJoyCurator(addr)) throw new IllegalStateException(UHQ_ERR_NOT_JOY_CURATOR);
+    }
+
+    public void requireSeedOwner(String seedId, String callerHex) {
+        MoodSeed s = ledger.getSeed(seedId);
+        if (s == null) throw new IllegalStateException(UHQ_ERR_SEED_NOT_FOUND);
+        if (!s.getOwnerHex().equalsIgnoreCase(callerHex)) throw new IllegalStateException(UHQ_ERR_NOT_SEED_OWNER);
+    }
+
+    public void requireValidTier(int tierIndex) {
+        if (tierIndex < 0 || tierIndex >= ledger.getTierCount()) throw new IllegalStateException(UHQ_ERR_INVALID_TIER);
+    }
+
+    // -------------------------------------------------------------------------
+    // ABI-STYLE SELECTORS (for EVM / web3 integration; unique 4-byte prefixes)
+    // -------------------------------------------------------------------------
