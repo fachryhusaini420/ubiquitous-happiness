@@ -1159,3 +1159,46 @@ public final class UbiquitousHappiness {
     public static final long CHAIN_ID_OPTIMISM = 10;
     public static final long CHAIN_ID_BASE = 8453;
 
+    public static boolean isSupportedChain(long chainId) {
+        return chainId == CHAIN_ID_MAINNET || chainId == CHAIN_ID_GOERLI || chainId == CHAIN_ID_SEPOLIA
+                || chainId == CHAIN_ID_POLYGON || chainId == CHAIN_ID_ARBITRUM_ONE || chainId == CHAIN_ID_OPTIMISM || chainId == CHAIN_ID_BASE;
+    }
+
+    // -------------------------------------------------------------------------
+    // REENTRANCY GUARD (simulated for Java; EVM would use modifier)
+    // -------------------------------------------------------------------------
+
+    private final ThreadLocal<Boolean> reentrancyLock = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    private void requireNonReentrant() {
+        if (Boolean.TRUE.equals(reentrancyLock.get())) throw new IllegalStateException("UHQ_ReentrantCall");
+    }
+
+    private <T> T withReentrancyGuard(java.util.function.Supplier<T> action) {
+        requireNonReentrant();
+        reentrancyLock.set(true);
+        try {
+            return action.get();
+        } finally {
+            reentrancyLock.set(false);
+        }
+    }
+
+    public MoodSeed plantMoodSeedGuarded(String ownerHex, int tierIndex, long principalWei) {
+        return withReentrancyGuard(() -> plantMoodSeed(ownerHex, tierIndex, principalWei));
+    }
+
+    public void withdrawMoodSeedGuarded(String callerHex, String seedId) {
+        withReentrancyGuard(() -> { withdrawMoodSeed(callerHex, seedId); return null; });
+    }
+
+    public long harvestAndDistributeGuarded(String curatorHex, long totalYieldWei) {
+        return withReentrancyGuard(() -> harvestAndDistribute(curatorHex, totalYieldWei));
+    }
+
+    // -------------------------------------------------------------------------
+    // CONSTANTS TABLE (export for Happiness.ai frontend)
+    // -------------------------------------------------------------------------
+
+    public static Map<String, Object> getConstantsTable() {
+        Map<String, Object> m = new LinkedHashMap<>();
