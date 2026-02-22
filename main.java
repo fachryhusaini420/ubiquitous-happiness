@@ -1030,3 +1030,46 @@ public final class UbiquitousHappiness {
     // -------------------------------------------------------------------------
     // ABI-STYLE SELECTORS (for EVM / web3 integration; unique 4-byte prefixes)
     // -------------------------------------------------------------------------
+
+    public static final String SELECTOR_PLANT = "0xa7f2e9c1";
+    public static final String SELECTOR_ADD_TO_SEED = "0xb8d3f4a2";
+    public static final String SELECTOR_WITHDRAW = "0xc9e4b5d3";
+    public static final String SELECTOR_HARVEST = "0xd0f6a7e4";
+    public static final String SELECTOR_SET_FEE = "0xe1a8b9f5";
+    public static final String SELECTOR_PAUSE = "0xf2b9c0a6";
+    public static final String SELECTOR_UNPAUSE = "0x03c1d2b7";
+    public static final String SELECTOR_ADVANCE_EPOCH = "0x14d2e3c8";
+    public static final String SELECTOR_PLANT_BATCH = "0x25e3f4d9";
+    public static final String SELECTOR_WITHDRAW_BATCH = "0x36f4a5e0";
+    public static final String SELECTOR_GET_SEED = "0x47a5b6f1";
+    public static final String SELECTOR_GET_TIER = "0x58b6c7a2";
+    public static final String SELECTOR_GET_CONFIG = "0x69c7d8b3";
+
+    public static String getSelectorForAction(String action) {
+        switch (action != null ? action : "") {
+            case "plant": return SELECTOR_PLANT;
+            case "addToSeed": return SELECTOR_ADD_TO_SEED;
+            case "withdraw": return SELECTOR_WITHDRAW;
+            case "harvest": return SELECTOR_HARVEST;
+            case "setFee": return SELECTOR_SET_FEE;
+            case "pause": return SELECTOR_PAUSE;
+            case "unpause": return SELECTOR_UNPAUSE;
+            case "advanceEpoch": return SELECTOR_ADVANCE_EPOCH;
+            case "plantBatch": return SELECTOR_PLANT_BATCH;
+            case "withdrawBatch": return SELECTOR_WITHDRAW_BATCH;
+            case "getSeed": return SELECTOR_GET_SEED;
+            case "getTier": return SELECTOR_GET_TIER;
+            case "getConfig": return SELECTOR_GET_CONFIG;
+            default: return "0x00000000";
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // INTEGRATION ADAPTER (single entry for web / RPC)
+    // -------------------------------------------------------------------------
+
+    public static final class CallResult {
+        public final boolean success;
+        public final String data;
+        public final String errorCode;
+
