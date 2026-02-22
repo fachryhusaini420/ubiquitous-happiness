@@ -1116,3 +1116,46 @@ public final class UbiquitousHappiness {
             }
             if (SELECTOR_PAUSE.equals(selector)) {
                 pauseGarden((String) params.get("curator"));
+                return new CallResult(true, "{}", null);
+            }
+            if (SELECTOR_UNPAUSE.equals(selector)) {
+                unpauseGarden((String) params.get("curator"));
+                return new CallResult(true, "{}", null);
+            }
+            if (SELECTOR_ADVANCE_EPOCH.equals(selector)) {
+                advanceEpoch((String) params.get("oracle"));
+                return new CallResult(true, "{\"epoch\":" + getCurrentEpoch() + "}", null);
+            }
+            if (SELECTOR_GET_SEED.equals(selector)) {
+                MoodSeed s = getSeed((String) params.get("seedId"));
+                if (s == null) return new CallResult(true, "null", null);
+                String json = "{\"seedId\":\"" + escape(s.getSeedId()) + "\",\"ownerHex\":\"" + escape(s.getOwnerHex()) + "\",\"tierIndex\":" + s.getTierIndex() + ",\"unlockEpoch\":" + s.getUnlockEpoch() + ",\"principalWei\":" + s.getPrincipalWei() + ",\"accruedCheerWei\":" + s.getAccruedCheerWei() + "}";
+                return new CallResult(true, json, null);
+            }
+            if (SELECTOR_GET_TIER.equals(selector)) {
+                int idx = ((Number) params.getOrDefault("tierIndex", 0)).intValue();
+                TierConfig t = getTier(idx);
+                if (t == null) return new CallResult(true, "null", null);
+                return new CallResult(true, "{\"tierIndex\":" + t.getTierIndex() + ",\"lockEpochs\":" + t.getLockEpochs() + ",\"weight\":" + t.getWeight() + "}", null);
+            }
+            if (SELECTOR_GET_CONFIG.equals(selector)) {
+                return new CallResult(true, getPublicConfigJson(), null);
+            }
+            return new CallResult(false, null, "UHQ_UnknownSelector");
+        } catch (Exception e) {
+            return new CallResult(false, null, e.getMessage() != null ? e.getMessage() : "UHQ_ExecutionFailed");
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // CHAIN ID / NETWORK (mainnet-safe; no hardcoded chain id in logic)
+    // -------------------------------------------------------------------------
+
+    public static final long CHAIN_ID_MAINNET = 1;
+    public static final long CHAIN_ID_GOERLI = 5;
+    public static final long CHAIN_ID_SEPOLIA = 11155111;
+    public static final long CHAIN_ID_POLYGON = 137;
+    public static final long CHAIN_ID_ARBITRUM_ONE = 42161;
+    public static final long CHAIN_ID_OPTIMISM = 10;
+    public static final long CHAIN_ID_BASE = 8453;
+
