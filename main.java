@@ -1288,3 +1288,21 @@ public final class UbiquitousHappiness {
                 case "snapshot":
                     System.out.println(engine.exportSnapshotJson());
                     break;
+                case "events":
+                    int n = args.length >= 2 ? Integer.parseInt(args[1]) : 20;
+                    for (EventEntry e : engine.getEventLog().getRecent(n))
+                        System.out.println(e.eventName + " | " + e.payload);
+                    break;
+                case "config":
+                    System.out.println(engine.getPublicConfigJson());
+                    break;
+                case "tierstats":
+                    for (TierStats ts : engine.getTierStats())
+                        System.out.println("tier=" + ts.tierIndex + " principal=" + ts.totalPrincipal + " cheer=" + ts.totalAccruedCheer + " seeds=" + ts.activeSeedCount);
+                    break;
+                default:
+                    System.out.println("Usage: plant <ownerHex> <tier> <amountWei> | harvest <curatorHex> <yieldWei> | epoch <oracleHex> | snapshot | events [n] | config | tierstats");
+            }
+        }
+    }
+}
