@@ -858,3 +858,46 @@ public final class UbiquitousHappiness {
             this.totalCheerAtEpoch = totalCheerAtEpoch;
             this.timestampMs = timestampMs;
         }
+    }
+
+    private final List<EpochRecord> epochHistory = Collections.synchronizedList(new ArrayList<>());
+    private static final int MAX_EPOCH_HISTORY = 256;
+
+    public void recordEpochSnapshot() {
+        epochHistory.add(new EpochRecord(ledger.getCurrentEpoch(), ledger.getTotalPrincipal(), ledger.getTotalAccruedCheer(), System.currentTimeMillis()));
+        while (epochHistory.size() > MAX_EPOCH_HISTORY) epochHistory.remove(0);
+    }
+
+    public List<EpochRecord> getEpochHistory() { return new ArrayList<>(epochHistory); }
+
+    // -------------------------------------------------------------------------
+    // PAYLOAD BUILDERS (for event emission from external adapters)
+    // -------------------------------------------------------------------------
+
+    public static String buildJoyPulsePayload(String ownerHex, String seedId, long amountWei, long newBalance) {
+        return String.format("owner=%s,seedId=%s,amount=%d,newBalance=%d", ownerHex, seedId, amountWei, newBalance);
+    }
+
+    public static String buildCheerOrbPayload(long totalYieldWei, long treasuryShareWei, long distributedWei) {
+        return String.format("totalYield=%d,treasuryShare=%d,distributed=%d", totalYieldWei, treasuryShareWei, distributedWei);
+    }
+
+    public static String buildSeedWithdrawnPayload(String ownerHex, String seedId, long principalWei, long cheerWei) {
+        return String.format("owner=%s,seedId=%s,principal=%d,cheer=%d", ownerHex, seedId, principalWei, cheerWei);
+    }
+
+    // -------------------------------------------------------------------------
+    // CONFIG EXPORT (for frontends / Happiness.ai)
+    // -------------------------------------------------------------------------
+
+    public Map<String, Object> getPublicConfig() {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("engineTag", UHQ_ENGINE_TAG);
+        m.put("zinniaDomainHex", ZINNIA_DOMAIN_HEX);
+        m.put("joyCurator", joyCurator);
+        m.put("cheerVault", cheerVault);
+        m.put("moodOracle", moodOracle);
+        m.put("sunshineTreasury", sunshineTreasury);
+        m.put("pulseRelay", pulseRelay);
+        m.put("deployTimestampMs", deployTimestampMs);
+        m.put("currentEpoch", ledger.getCurrentEpoch());
