@@ -1202,3 +1202,46 @@ public final class UbiquitousHappiness {
 
     public static Map<String, Object> getConstantsTable() {
         Map<String, Object> m = new LinkedHashMap<>();
+        m.put("CHEER_BASIS_DENOM", CHEER_BASIS_DENOM);
+        m.put("CHEER_MAX_FEE_BASIS", CHEER_MAX_FEE_BASIS);
+        m.put("CHEER_MAX_MOOD_TIERS", CHEER_MAX_MOOD_TIERS);
+        m.put("CHEER_MAX_SEEDS_PER_HOLDER", CHEER_MAX_SEEDS_PER_HOLDER);
+        m.put("CHEER_MIN_LOCK_EPOCHS", CHEER_MIN_LOCK_EPOCHS);
+        m.put("CHEER_MAX_LOCK_EPOCHS", CHEER_MAX_LOCK_EPOCHS);
+        m.put("CHEER_BATCH_SIZE", CHEER_BATCH_SIZE);
+        m.put("CHEER_SCALE", CHEER_SCALE);
+        m.put("CHEER_MAX_WEIGHT", CHEER_MAX_WEIGHT);
+        m.put("ZINNIA_DOMAIN_HEX", ZINNIA_DOMAIN_HEX);
+        m.put("JOY_CURATOR_HEX", JOY_CURATOR_HEX);
+        m.put("CHEER_VAULT_HEX", CHEER_VAULT_HEX);
+        m.put("MOOD_ORACLE_HEX", MOOD_ORACLE_HEX);
+        m.put("SUNSHINE_TREASURY_HEX", SUNSHINE_TREASURY_HEX);
+        m.put("PULSE_RELAY_HEX", PULSE_RELAY_HEX);
+        m.put("UHQ_ENGINE_TAG", UHQ_ENGINE_TAG);
+        return m;
+    }
+
+    // -------------------------------------------------------------------------
+    // DEMO / SEED DATA (run once for sanity check; not used in production)
+    // -------------------------------------------------------------------------
+
+    public static void runDemo(UbiquitousHappiness engine) {
+        String alice = "0x7F2e9A4c1B8d3E6f0a5C8b2D9e4F7a1c6B0d3E9";
+        engine.plantMoodSeed(alice, 0, 1_000_000_000_000_000_000L);
+        engine.plantMoodSeed(alice, 1, 500_000_000_000_000_000L);
+        if (engine.getAccess().isJoyCurator(alice)) {
+            engine.harvestAndDistribute(alice, 100_000_000_000_000_000L);
+        }
+        if (engine.getAccess().isMoodOracle(engine.getMoodOracle())) {
+            engine.advanceEpoch(engine.getMoodOracle());
+        }
+    }
+
+    /** Returns a short fingerprint for logging; does not expose secrets. */
+    public String getFingerprint() {
+        return "UHQ-" + Integer.toHexString((int) (deployTimestampMs & 0xFFFFFF)) + "-" + ledger.getSeedCount();
+    }
+
+    /** Human-readable one-line status for dashboards. */
+    public String getStatusLine() {
+        return String.format("epoch=%d principal=%s cheer=%s seeds=%d paused=%s",
